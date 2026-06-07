@@ -1,0 +1,38 @@
+services:
+  app:
+    build: ./app
+    container_name: cwdl-origin-app
+    expose:
+      - "5000"
+
+  waf:
+    image: owasp/modsecurity-crs:nginx
+    container_name: cwdl-waf
+    depends_on:
+      - app
+    environment:
+      BACKEND: "http://app:5000"
+      SERVER_NAME: "localhost"
+      PORT: "8080"
+
+      MODSEC_RULE_ENGINE: "On"
+      BLOCKING_PARANOIA: "1"
+      DETECTION_PARANOIA: "1"
+
+      ANOMALY_INBOUND: "5"
+      ANOMALY_OUTBOUND: "4"
+
+      MODSEC_AUDIT_ENGINE: "RelevantOnly"
+      LOGLEVEL: "warn"
+    expose:
+      - "8080"
+
+  edge:
+    build: ./nginx-edge
+    container_name: cwdl-nginx-edge
+    depends_on:
+      - waf
+    ports:
+      - "8080:80"
+    volumes:
+      - ./logs/nginx:/var/log/nginx

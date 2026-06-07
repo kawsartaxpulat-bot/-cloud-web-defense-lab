@@ -1,0 +1,21 @@
+============================================================
+Cloud Web Defense Lab - Nginx Edge Log Report
+============================================================
+Total requests: 515
+
+HTTP status distribution:
+  429: 445
+  200: 61
+  403: 9
+
+Rate limit result:
+  REJECTED: 445
+  PASSED: 68
+
+Top client IPs:
+  172.18.0.1: 515
+
+Basic security interpretation:
+  WAF/security blocking observed: 9 requests returned 403.
+  Anti-DDoS/rate limiting observed: 445 requests returned 429.
+============================================================

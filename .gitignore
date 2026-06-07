@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Runtime logs
+logs/*
+!logs/.gitkeep
+
+# Docker
+*.pid
+
+# Temporary files
+*.tmp
+*.log
+
+# Secrets
+.env
+*.key
+*.pem
