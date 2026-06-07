@@ -66,35 +66,3 @@ Client / curl / ab
 
 
 
-```text
-Client / curl / ab
-        |
-        v
-+-----------------------------+
-| Nginx Edge Layer             |
-| - Reverse proxy              |
-| - Request rate limiting      |
-| - Connection limiting        |
-| - Timeout hardening          |
-| - Access logging             |
-+-----------------------------+
-        |
-        v
-+-----------------------------+
-| WAF Layer                    |
-| ModSecurity + OWASP CRS      |
-| - SQL Injection detection    |
-| - XSS detection              |
-| - Malicious request blocking |
-+-----------------------------+
-        |
-        v
-+-----------------------------+
-| Origin Web Application       |
-| Flask Demo App               |
-| - /                          |
-| - /health                    |
-| - /search?q=                 |
-| - /login                     |
-+-----------------------------+
-Eof
