@@ -1,3 +1,113 @@
+## 9. Nginx Edge 日志分析报告
+
+### 9.1 日志统计概览
+
+本次 Nginx Edge 层共记录到 **515 次 HTTP 请求**。根据访问日志统计结果，各类 HTTP 状态码分布如下：
+
+| HTTP 状态码 | 请求数量 | 含义                  |
+| -------- | ---: | ------------------- |
+| 200      |   61 | 正常请求成功通过            |
+| 403      |    9 | 请求被 WAF 或安全规则阻断     |
+| 429      |  445 | 请求触发限流策略，被 Edge 层拒绝 |
+
+从结果可以看出，绝大多数异常高频请求被 Nginx Edge 层识别并限制，返回 `429 Too Many Requests`。同时，部分恶意请求被安全策略阻断，返回 `403 Forbidden`。
+
+---
+
+### 9.2 请求限速结果分析
+
+日志中显示：
+
+```text
+Rate limit result:
+  REJECTED: 445
+  PASSED: 68
+```
+
+其中：
+
+* `REJECTED: 445` 表示有 445 个请求触发了限流策略，被 Nginx Edge 层拒绝。
+* `PASSED: 68` 表示有 68 个请求通过了 Edge 层限流检查。
+
+这说明 Nginx 的请求频率限制策略已经生效。当同一客户端在短时间内发送大量请求时，Edge 层能够主动限制异常流量，避免所有请求直接进入后端 WAF 和 Origin 应用，从而降低后端服务压力。
+
+从防护角度看，`429` 状态码可以被视为 Anti-DDoS / Rate Limiting 能力的体现。
+
+---
+
+### 9.3 WAF 阻断结果分析
+
+日志中显示：
+
+```text
+WAF/security blocking observed: 9 requests returned 403.
+```
+
+共有 **9 个请求返回 403 Forbidden**，说明这些请求被 WAF 或安全访问控制规则阻断。
+
+在本实验环境中，403 状态码通常表示请求存在潜在安全风险，例如：
+
+* XSS 攻击 Payload
+* SQL Injection 攻击 Payload
+* 命中 OWASP CRS 规则的异常 HTTP 请求
+* 被 ModSecurity 判断为高风险的请求
+
+这说明 ModSecurity 与 OWASP Core Rule Set 已经能够对恶意请求进行检测，并在阻断模式下拒绝这些请求继续访问后端 Flask Origin 应用。
+
+---
+
+### 9.4 客户端来源分析
+
+日志中显示：
+
+```text
+Top client IPs:
+  172.18.0.1: 515
+```
+
+所有 515 次请求均来自 `172.18.0.1`。
+
+在 Docker 本地实验环境中，`172.18.0.1` 通常是 Docker 网络中的网关地址或宿主机在 Docker bridge 网络中的地址。因此，该结果说明所有测试请求均来自本地实验主机，并通过 Docker 网络进入 Nginx Edge 容器。
+
+这符合本地化 Cloud Web Defense Lab 的实验场景。
+
+---
+
+### 9.5 安全意义总结
+
+本次日志统计证明了该 Web 防护架构具备以下安全能力：
+
+1. **正常流量放行能力**
+   部分请求返回 `200 OK`，说明正常请求能够通过 Edge 层和 WAF 层，并成功访问后端 Origin Flask 应用。
+
+2. **请求限速能力**
+   大量请求返回 `429 Too Many Requests`，说明 Nginx Edge 层能够对异常高频请求进行限制，减少后端服务受到高并发或恶意请求冲击的风险。
+
+3. **Web 攻击阻断能力**
+   部分请求返回 `403 Forbidden`，说明 WAF 层能够识别并阻断疑似恶意请求，例如 XSS 或 SQL Injection 类型攻击。
+
+4. **源站保护能力**
+   请求首先进入 Edge 层和 WAF 层，后端 Flask Origin 应用不直接暴露给外部访问者，从而降低攻击者绕过安全防护直接攻击源站的风险。
+
+---
+
+### 9.6 分析结论
+
+根据 Nginx Edge 日志统计结果，本实验成功验证了分层 Web 防护架构的有效性。
+
+Nginx Edge 层能够对异常高频请求进行限速处理，并返回 `429 Too Many Requests`。ModSecurity WAF 层能够对恶意请求进行安全检测，并返回 `403 Forbidden`。正常请求则能够返回 `200 OK`，说明系统在安全防护和正常业务访问之间实现了基本平衡。
+
+总体来看，该实验环境体现了云 Web 防护中的三层核心思想：
+
+```text
+Edge 层负责流量控制
+WAF 层负责应用层攻击检测
+Origin 隔离负责源站保护
+```
+
+该日志结果可以作为 Cloud Web Defense Lab 的实验验证证据，证明系统具备基础的 Anti-DDoS、WAF 拦截和源站保护能力。
+
+
 ============================================================
 Cloud Web Defense Lab - Nginx Edge Log Report
 ============================================================
